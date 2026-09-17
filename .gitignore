@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Runtime data (uploads, generated audiobooks, local settings)
+webapp/data/
+webapp/narratix_settings.json
