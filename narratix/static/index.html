@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Narratix: EPUB to audiobook</title>
+<meta name="description" content="Turn any EPUB into a narrated audiobook, entirely offline." />
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+<script>
+  // Set the theme before first paint so there is no flash. Saved choice wins, else the OS setting.
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem("narratix_theme"); } catch (e) {}
+    var dark = saved ? saved === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+  })();
+</script>
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+<div class="ambient" aria-hidden="true"></div>
+
+<div class="wrap">
+  <nav class="nav">
+    <a class="wordmark" href="/" aria-label="Narratix home">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <rect x="1" y="8" width="3" height="5" rx="1.5"/>
+        <rect x="6" y="5" width="3" height="11" rx="1.5"/>
+        <rect x="11" y="2" width="3" height="16" rx="1.5"/>
+        <rect x="16" y="6" width="3" height="8" rx="1.5"/>
+      </svg>
+      Narratix
+    </a>
+    <div class="nav-actions">
+    <div class="nav-tabs" role="tablist">
+      <button class="nav-tab active" id="tab-create" role="tab">Create</button>
+      <button class="nav-tab" id="tab-library" role="tab">Library</button>
+    </div>
+    <button class="icon-btn theme-toggle" id="theme-toggle" title="Switch light or dark theme" aria-label="Switch light or dark theme">
+      <svg class="icon-sun" width="17" height="17" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M120 40V16a8 8 0 0 1 16 0v24a8 8 0 0 1-16 0Zm72 88a64 64 0 1 1-64-64 64.1 64.1 0 0 1 64 64Zm-16 0a48 48 0 1 0-48 48 48.1 48.1 0 0 0 48-48ZM58.3 69.7a8 8 0 0 0 11.4-11.4l-16-16a8 8 0 0 0-11.4 11.4Zm0 116.6-16 16a8 8 0 0 0 11.4 11.4l16-16a8 8 0 0 0-11.4-11.4ZM192 72a8 8 0 0 0 5.7-2.3l16-16a8 8 0 0 0-11.4-11.4l-16 16A8 8 0 0 0 192 72Zm5.7 114.3a8 8 0 0 0-11.4 11.4l16 16a8 8 0 0 0 11.4-11.4ZM48 128a8 8 0 0 0-8-8H16a8 8 0 0 0 0 16h24a8 8 0 0 0 8-8Zm80 80a8 8 0 0 0-8 8v24a8 8 0 0 0 16 0v-24a8 8 0 0 0-8-8Zm112-88h-24a8 8 0 0 0 0 16h24a8 8 0 0 0 0-16Z"/></svg>
+      <svg class="icon-moon" width="17" height="17" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M233.5 154.1a8 8 0 0 0-8.3-1.8A88 88 0 0 1 103.7 30.8a8 8 0 0 0-10-10A104 104 0 1 0 235.3 162.4a8 8 0 0 0-1.8-8.3ZM128 216A88 88 0 0 1 84.6 50.4a104.1 104.1 0 0 0 121 121A88.2 88.2 0 0 1 128 216Z"/></svg>
+    </button>
+    <button class="text-btn" id="settings-btn" title="Choose where audiobooks are saved">
+      <svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
+        <path d="M216 72h-84.7L104 44.7A15.9 15.9 0 0 0 92.7 40H40a16 16 0 0 0-16 16v144a16 16 0 0 0 16 16h176.9A15.1 15.1 0 0 0 232 200.9V88a16 16 0 0 0-16-16ZM40 56h52.7l16 16H40Zm176 144H40V88h176Z"/>
+      </svg>
+      Save location
+    </button>
+    </div>
+  </nav>
+
+<main id="create-view">
+
+  <header class="hero">
+    <div class="tags rise" style="--i:0">
+      <span class="tag tag-green">Offline</span>
+      <span class="tag tag-blue">18 voices</span>
+      <span class="tag tag-yellow">MP3 with chapter tags</span>
+    </div>
+    <h1 class="rise" style="--i:1">Turn any book into an audiobook, on your own machine.</h1>
+    <p class="lede rise" style="--i:2">Reads any EPUB aloud with a voice model on your computer. No uploads, no account, no API key.</p>
+  </header>
+
+  <ol class="stepper rise" style="--i:3" id="stepper" aria-label="Progress">
+    <li class="step active" data-step="1"><span class="step-circle">01</span><span class="step-label">Book</span></li>
+    <li class="step-line" id="line-1-2" aria-hidden="true"></li>
+    <li class="step" data-step="2"><span class="step-circle">02</span><span class="step-label">Voice</span></li>
+    <li class="step-line" id="line-2-3" aria-hidden="true"></li>
+    <li class="step" data-step="3"><span class="step-circle">03</span><span class="step-label">Generate</span></li>
+  </ol>
+
+  <!-- Step 1: upload -->
+  <section class="card" id="upload-card">
+    <div class="card-head">
+      <h2>Choose your book</h2>
+      <p class="hint">Drop in an .epub file. It is read locally and never leaves this computer.</p>
+    </div>
+
+    <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Choose an EPUB file">
+      <svg width="28" height="28" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">
+        <path d="M224 144v64a8 8 0 0 1-8 8H40a8 8 0 0 1-8-8v-64a8 8 0 0 1 16 0v56h160v-56a8 8 0 0 1 16 0Zm-101.7-5.7a8 8 0 0 0 11.4 0l40-40a8 8 0 0 0-11.4-11.4L136 116.7V40a8 8 0 0 0-16 0v76.7l-26.3-26.4a8 8 0 0 0-11.4 11.4Z"/>
+      </svg>
+      <div class="dz-primary">Drop an .epub here, or click to browse</div>
+      <div class="dz-secondary">Chapters and cover art are detected automatically</div>
+    </div>
+    <input type="file" id="file-input" accept=".epub" class="hidden" />
+
+    <div id="parsing-status" class="parsing hidden">Reading your book&hellip;</div>
+
+    <div id="book-preview" class="hidden">
+      <div class="book-preview">
+        <img id="book-cover-img" class="book-cover hidden" alt="Book cover" />
+        <div id="book-cover-placeholder" class="book-cover placeholder" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 256 256" fill="currentColor">
+            <path d="M208 24H72a32 32 0 0 0-32 32v168a8 8 0 0 0 8 8h144a8 8 0 0 0 0-16H56a16 16 0 0 1 16-16h136a8 8 0 0 0 8-8V32a8 8 0 0 0-8-8Zm-8 160H72a31.8 31.8 0 0 0-16 4.3V56a16 16 0 0 1 16-16h128Z"/>
+          </svg>
+        </div>
+        <div class="book-fields">
+          <div class="field">
+            <label for="title-input">Title</label>
+            <input type="text" id="title-input" />
+          </div>
+          <div class="field">
+            <label for="author-input">Author</label>
+            <input type="text" id="author-input" />
+          </div>
+          <dl class="stats">
+            <div><dt>Chapters</dt><dd id="chapter-count">0</dd></div>
+            <div><dt>Narration</dt><dd>~<span id="est-minutes">0</span> min</dd></div>
+            <div><dt>Size</dt><dd>~<span id="est-size">0</span> MB</dd></div>
+          </dl>
+        </div>
+      </div>
+      <button class="text-btn muted" id="change-file-btn">Choose a different file</button>
+    </div>
+  </section>
+
+  <!-- Step 2: voice -->
+  <section class="card hidden" id="voice-card">
+    <div class="card-head">
+      <h2>Pick a narrator</h2>
+      <p class="hint">Preview any voice, then select one. All voices run on your computer.</p>
+    </div>
+    <div class="voice-filters" id="voice-filters"></div>
+    <div class="voice-grid" id="voice-grid"></div>
+
+    <details class="advanced">
+      <summary>Advanced options</summary>
+      <div class="option-row">
+        <div>
+          <div class="option-title">Narration speed</div>
+          <div class="option-desc">Slower or faster than the natural pace</div>
+        </div>
+        <div class="rate-slider">
+          <input type="range" id="rate-slider" min="-30" max="30" step="5" value="0" aria-label="Narration speed" />
+          <span class="rate-value" id="rate-value">+0%</span>
+        </div>
+      </div>
+      <div class="option-row">
+        <div>
+          <div class="option-title">Folder name</div>
+          <div class="option-desc">Saved as <span class="mono" id="folder-preview"></span></div>
+        </div>
+        <select id="folder-format" aria-label="Folder name format">
+          <option value="title_author">Title - Author</option>
+          <option value="author_title">Author - Title</option>
+          <option value="title">Title only</option>
+          <option value="author_nested">Author / Title (nested)</option>
+        </select>
+      </div>
+      <div class="option-row">
+        <div>
+          <div class="option-title">Also save one combined file</div>
+          <div class="option-desc">A single MP3 of the whole book, in addition to the chapters</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="combined-toggle" aria-label="Also save one combined file" />
+          <span class="slider-toggle"></span>
+        </label>
+      </div>
+    </details>
+  </section>
+
+  <!-- Step 3: generate -->
+  <section class="card hidden" id="generate-card">
+    <div class="generate-row">
+      <div>
+        <div class="option-title">Ready when you are</div>
+        <div class="option-desc" id="estimate-text">Estimating generation time&hellip;</div>
+      </div>
+      <button class="btn-primary" id="generate-btn" disabled>Generate audiobook</button>
+    </div>
+    <p class="fineprint">
+      Saved to a folder named after the book in your save location, with one MP3 per chapter
+      and the cover image. Point your audiobook player's library at that folder.
+    </p>
+  </section>
+
+  <!-- Progress -->
+  <section class="card window hidden" id="progress-card">
+    <div class="window-bar" aria-hidden="true"><i></i><i></i><i></i><span>narratix</span></div>
+    <div class="window-body">
+      <h2>Narrating your book</h2>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-status mono" id="progress-status">Starting&hellip;</div>
+    </div>
+  </section>
+
+  <!-- Done -->
+  <section class="card hidden" id="done-card">
+    <div class="done-mark" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 256 256" fill="currentColor"><path d="m229.7 77.7-120 120a8 8 0 0 1-11.4 0l-56-56a8 8 0 0 1 11.4-11.4L104 180.7 218.3 66.3a8 8 0 0 1 11.4 11.4Z"/></svg>
+    </div>
+    <h2 id="done-title">Your audiobook is ready</h2>
+    <p class="mono done-meta" id="done-meta"></p>
+    <button class="btn-secondary" id="restart-btn">Convert another book</button>
+  </section>
+
+  <!-- Error -->
+  <section class="card hidden" id="error-card">
+    <div class="error-box" role="alert">
+      <span class="tag tag-red">Error</span>
+      <span id="error-message"></span>
+    </div>
+    <button class="btn-secondary" id="error-restart-btn">Start over</button>
+  </section>
+
+</main>
+
+<main id="library-view" class="hidden">
+  <header class="lib-head rise">
+    <h1>Library</h1>
+    <p class="lede-small" id="lib-folder"></p>
+  </header>
+
+  <div id="lib-shelf">
+    <div class="lib-tools">
+      <input type="text" id="lib-search" placeholder="Search title or author" aria-label="Search library" />
+      <select id="lib-sort" aria-label="Sort library">
+        <option value="recent">Recently added</option>
+        <option value="title">Title</option>
+        <option value="author">Author</option>
+      </select>
+    </div>
+    <div class="lib-grid" id="lib-grid"></div>
+    <div class="lib-empty hidden" id="lib-empty"></div>
+  </div>
+
+  <section class="card hidden" id="lib-detail">
+    <button class="text-btn muted back" id="lib-back">&larr; All books</button>
+    <div class="book-preview">
+      <img id="lib-cover" class="book-cover hidden" alt="Book cover" />
+      <div id="lib-cover-ph" class="book-cover placeholder" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 256 256" fill="currentColor"><path d="M208 24H72a32 32 0 0 0-32 32v168a8 8 0 0 0 8 8h144a8 8 0 0 0 0-16H56a16 16 0 0 1 16-16h136a8 8 0 0 0 8-8V32a8 8 0 0 0-8-8Zm-8 160H72a31.8 31.8 0 0 0-16 4.3V56a16 16 0 0 1 16-16h128Z"/></svg>
+      </div>
+      <div class="book-fields">
+        <h2 id="lib-title"></h2>
+        <p class="hint" id="lib-author"></p>
+        <p class="mono lib-meta" id="lib-meta"></p>
+        <div><button class="btn-secondary" id="lib-open">Open folder</button></div>
+      </div>
+    </div>
+    <ol class="chapter-list" id="lib-chapters"></ol>
+  </section>
+  <audio id="lib-player" class="hidden"></audio>
+</main>
+
+  <footer class="footer">
+    <span>Runs entirely on your machine</span>
+    <span>Voices by the open-source Kokoro model</span>
+  </footer>
+</div>
+
+<dialog id="settings-dialog" class="settings-dialog">
+  <div class="dialog-head">
+    <h2>Save location</h2>
+    <button class="icon-btn" id="close-settings-btn" aria-label="Close">
+      <svg width="16" height="16" viewBox="0 0 256 256" fill="currentColor"><path d="M205.7 194.3a8 8 0 0 1-11.4 11.4L128 139.3l-66.3 66.4a8 8 0 0 1-11.4-11.4L116.7 128 50.3 61.7a8 8 0 0 1 11.4-11.4L128 116.7l66.3-66.4a8 8 0 0 1 11.4 11.4L139.3 128Z"/></svg>
+    </button>
+  </div>
+  <p class="hint">Each finished book is saved here in its own <span class="mono">Title - Author</span> folder.</p>
+  <div class="folder-display mono" id="folder-display">Loading&hellip;</div>
+  <div class="folder-meta" id="folder-meta"></div>
+  <div class="dialog-actions">
+    <button class="btn-secondary" id="browse-btn">Choose folder&hellip;</button>
+    <button class="btn-primary" id="save-settings-btn" disabled>Save</button>
+  </div>
+  <div class="settings-note" id="settings-note"></div>
+  <div class="dialog-foot"><kbd>Esc</kbd> to close</div>
+</dialog>
+
+<audio id="preview-player" class="hidden"></audio>
+<script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,11 +1,10 @@
 ebooklib>=0.18
 beautifulsoup4>=4.12.0
 lxml>=4.9.0
-edge-tts>=6.1.0
 mutagen>=1.47.0
 tqdm>=4.66.0
-
-# Web app (optional -- only needed for `python run_webapp.py`)
+kokoro-onnx>=0.4.0
+soundfile>=0.12.0
 fastapi>=0.110.0
 uvicorn>=0.29.0
 python-multipart>=0.0.9

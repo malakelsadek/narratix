@@ -4,6 +4,16 @@ __pycache__/
 venv/
 *.egg-info/
 
+# Downloaded model files (python scripts/download_models.py)
+models/
+
 # Runtime data (uploads, generated audiobooks, local settings)
-webapp/data/
-webapp/narratix_settings.json
+narratix/data/
+narratix/narratix_settings.json
+output/
+
+# Throwaway demo data for README screenshots
+demo/
+
+# Leftover data from the old pre-restructure app layout
+webapp/
