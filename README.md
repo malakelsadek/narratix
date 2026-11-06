@@ -1,5 +1,9 @@
 # Narratix
 
+![license](https://img.shields.io/badge/license-MIT-blue)
+![language](https://img.shields.io/badge/language-Python-3776AB)
+![platform](https://img.shields.io/badge/platform-Windows-lightgrey)
+
 Turn any EPUB into an MP3 audiobook, entirely on your own machine. It uses the open-source [Kokoro](https://github.com/thewh1teagle/kokoro-onnx) voice model on your CPU. No accounts, no API keys, and no network calls after a one-time model download.
 
 <table>
